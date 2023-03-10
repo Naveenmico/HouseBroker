@@ -14,75 +14,74 @@ import { v4 as uuidv4 } from 'uuid'
 import Spinner from '../Components/Spinner'
 
 function EditListing() {
-  // eslint-disable-next-line
-  const [geolocationEnabled, setGeolocationEnabled] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [listing, setListing] = useState(false)
-  const [formData, setFormData] = useState({
-    type: 'rent',
-    name: '',
-    bedrooms: 1,
-    bathrooms: 1,
-    parking: false,
-    furnished: false,
-    address: '',
-    offer: false,
-    regularPrice: 0,
-    discountedPrice: 0,
-    images: {},
-    latitude: 0,
-    longitude: 0,
-  })
+// eslint-disable-next-line
+const [geolocationEnabled, setGeolocationEnabled] = useState(true)
+const [loading, setLoading] = useState(false)
+const [listing, setListing] = useState(false)
+const [formData, setFormData] = useState({
+  type: 'rent',
+  name: '',
+  bedrooms: 1,
+  bathrooms: 1,
+  parking: false,
+  furnished: false,
+  address: '',
+  offer: false,
+  regularPrice: 0,
+  discountedPrice: 0,
+  images: {},
+  latitude: 0,
+  longitude: 0,
+})
 
-  const {
-    type,
-    name,
-    bedrooms,
-    bathrooms,
-    parking,
-    furnished,
-    address,
-    offer,
-    regularPrice,
-    discountedPrice,
-    images,
-    latitude,
-    longitude,
-  } = formData
+const {
+  type,
+  name,
+  bedrooms,
+  bathrooms,
+  parking,
+  furnished,
+  address,
+  offer,
+  regularPrice,
+  discountedPrice,
+  images,
+  latitude,
+  longitude,
+} = formData
 
-  const auth = getAuth()
-  const navigate = useNavigate()
-  const params = useParams()
-  const isMounted = useRef(true)
+const auth = getAuth()
+const navigate = useNavigate()
+const params = useParams()
+const isMounted = useRef(true)
 
-  // Redirect if listing is not user's
-  useEffect(() => {
-    if (listing && listing.userRef !== auth.currentUser.uid) {
-      toast.error('You can not edit that listing')
+// Redirect if listing is not user's
+useEffect(() => {
+  if (listing && listing.userRef !== auth.currentUser.uid) {
+    toast.error('You can not edit that listing')
+    navigate('/')
+  }
+})
+
+// Fetch listing to edit
+useEffect(() => {
+  setLoading(true)
+  const fetchListing = async () => {
+    const docRef = doc(db, 'listings', params.listingId)
+    const docSnap = await getDoc(docRef)
+    if (docSnap.exists()) {
+      setListing(docSnap.data())
+      setFormData({ ...docSnap.data(), address: docSnap.data().location })
+      setLoading(false)
+    } else {
       navigate('/')
+      toast.error('Listing does not exist')
     }
-  })
+  }
 
-  // Fetch listing to edit
-  useEffect(() => {
-    setLoading(true)
-    const fetchListing = async () => {
-      const docRef = doc(db, 'listings', params.listingId)
-      const docSnap = await getDoc(docRef)
-      if (docSnap.exists()) {
-        setListing(docSnap.data())
-        setFormData({ ...docSnap.data(), address: docSnap.data().location })
-        setLoading(false)
-      } else {
-        navigate('/')
-        toast.error('Listing does not exist')
-      }
-    }
+  fetchListing()
+}, [params.listingId, navigate])
 
-    fetchListing()
-  }, [params.listingId, navigate])
-
-  // Sets userRef to logged in user
   useEffect(() => {
     if (isMounted) {
       onAuthStateChanged(auth, (user) => {
@@ -186,7 +185,7 @@ function EditListing() {
       })
     }
 
-    const imgUrls = await Promise.all(
+    const imageUrls = await Promise.all(
       [...images].map((image) => storeImage(image))
     ).catch(() => {
       setLoading(false)
@@ -196,7 +195,7 @@ function EditListing() {
 
     const formDataCopy = {
       ...formData,
-      imgUrls,
+      imageUrls,
       geolocation,
       timestamp: serverTimestamp(),
     }
@@ -206,7 +205,6 @@ function EditListing() {
     delete formDataCopy.address
     !formDataCopy.offer && delete formDataCopy.discountedPrice
 
-    // Update listing
     const docRef = doc(db, 'listings', params.listingId)
     await updateDoc(docRef, formDataCopy)
     setLoading(false)
@@ -248,7 +246,7 @@ function EditListing() {
   return (
     <div className='profile'>
       <header>
-        <p className='pageHeader'>Edit Listing</p>
+        <p className='pageHeader'>Edit a Listing</p>
       </header>
 
       <main>
